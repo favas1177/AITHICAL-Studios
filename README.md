@@ -110,6 +110,10 @@ Screenshots
 2. WhatsApp/Telegram Lead Conversation
 ![440fa2c5-6961-4bbb-aa71-ef7b5521bee9](https://github.com/user-attachments/assets/a03f1cf4-2561-48f8-bf5a-96441e544560)
 
+3. Business owners get details about the booked appointments and what discused in chat
+
+![7f4c2a0c-d9f9-42cc-93dd-c6c3e8a2d9f5](https://github.com/user-attachments/assets/5484bfb2-e118-4a5a-82c8-8492015da174)
+
 
 License
 
