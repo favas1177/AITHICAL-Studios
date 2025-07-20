@@ -69,8 +69,8 @@ Setup:
 
 Clone this repository
 
-git clone https://github.com/yourusername/ai-social-media-assistant.git
-cd ai-social-media-assistant
+git clone https://github.com/favas1177/AITHICAL-Studios.git
+cd AITHICAL-Studios
 
 Setup environment variables (rename .env.example to .env and fill in your keys):
 
@@ -87,7 +87,7 @@ Supabase HTTP API
 
 OpenAI
 
-Google Drive or Gofile (for image hosting)
+Google Drive or imageBB (for image hosting)
 
 Deploy Telegram Bot / Connect WhatsApp Number
 
@@ -101,15 +101,14 @@ Get auto-written captions
 
 Screenshots
 
-1. Trending Video Suggestions
+
+1. AI-Generated Product Post
+
+![bc0ef9a8-0b0d-4a53-b836-cf84c77eb681](https://github.com/user-attachments/assets/706e6eda-6f28-4ebc-bb0c-fa875e253bc2)
 
 
-
-2. AI-Generated Product Post
-
-
-
-3. WhatsApp/Telegram Lead Conversation
+2. WhatsApp/Telegram Lead Conversation
+![440fa2c5-6961-4bbb-aa71-ef7b5521bee9](https://github.com/user-attachments/assets/a03f1cf4-2561-48f8-bf5a-96441e544560)
 
 
 License
