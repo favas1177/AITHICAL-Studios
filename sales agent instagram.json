@@ -1,0 +1,975 @@
+{
+  "name": "sales agent instagram",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Webhook').item.json.body.entry[0].messaging[0].message.text }}",
+        "options": {
+          "systemMessage": "=# ROLE\nYou are a friendly AI assistant.\nYou are currently talking to a user over telegram.\n\n# RULES\nWhen the user sends a new message, decide if they shared any **noteworthy information** that should be **saved in memory** for future reference.\nIf so, use the **Save Memory** tool to store this information.\nDO NOT inform the user that you are saving this information.\nSimply continue the conversation as normal.\n\n# Knowledge Base\nYou have access to a knowledge base about \"Gym Architech - Agency Knowledge Base,\" last updated on July 19, 2025. This knowledge base contains detailed information about the company profile, contact and location, core services, and detailed services with pricing (Website Development, Digital Marketing & Lead Generation, Automation & Operations), as well as frequently asked questions. Use this information to answer user queries accurately and comprehensively.\n\n# Tools\n## Save Memory\nUse this tool to **store any important facts** shared by the user.\nSummarize the information clearly and pass it to this tool.\n\n# Memories\nThese are the **last stored facts** collected from the user (including date/time).\n{{ $json.Conversation_memory.toJsonString() }}\n\n!! IMPORTANT !!\nTake these stored facts into account when replying.\nIf a fact was already stored, do not repeat asking for it.\nRespond naturally and conversationally."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        500,
+        500
+      ],
+      "id": "2f55a0f4-2de2-4c66-a279-9f8896bfd048",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "tableId": "Customer_history",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "message",
+              "fieldValue": "={{ $('Webhook').item.json.body.entry[0].messaging[0].message.text }}"
+            },
+            {
+              "fieldId": "recipient",
+              "fieldValue": "={{ $('Webhook').item.json.body.entry[0].messaging[0].recipient.id }}"
+            },
+            {
+              "fieldId": "sender",
+              "fieldValue": "={{ $('Webhook').item.json.body.entry[0].messaging[0].sender.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        640,
+        720
+      ],
+      "id": "bd0b2e88-aed3-483c-a764-40f184f654c7",
+      "name": "Save Memory",
+      "credentials": {
+        "supabaseApi": {
+          "id": "00g5neorHwwOw7pG",
+          "name": "SayianTech_hackgen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "Customer_history",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "sender",
+              "condition": "eq",
+              "keyValue": "={{ $json.sender }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        500
+      ],
+      "id": "ca719572-712f-44f5-a5be-0445a6aeb614",
+      "name": "Get User History",
+      "alwaysOutputData": false,
+      "credentials": {
+        "supabaseApi": {
+          "id": "00g5neorHwwOw7pG",
+          "name": "SayianTech_hackgen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        720
+      ],
+      "id": "e6b9eea2-3583-473a-812c-d4d81f3c9da8",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Ezn8q0QR4KW7OJL4",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "Conversation_memory",
+        "include": "specifiedFields",
+        "fieldsToInclude": "message,created_at",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        180,
+        500
+      ],
+      "id": "b1ba038c-471d-4353-a205-7e5e73cb1547",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "use this vector store answer FQs about the Gym Architech",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        760,
+        722.5
+      ],
+      "id": "558f4a5d-27aa-4513-b871-a3b6651fbd8d",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "00g5neorHwwOw7pG",
+          "name": "SayianTech_hackgen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "allowFileUploads": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1140,
+        1060
+      ],
+      "id": "68dabb2a-8c1f-455e-b84a-5e0d8bcb4992",
+      "name": "When chat message received",
+      "webhookId": "b4d1be3f-59bf-4bdf-a26e-c477feeedde5",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -920,
+        1060
+      ],
+      "id": "64479296-d82c-4d48-a368-4914b9b43505",
+      "name": "Supabase Vector Store1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.body.entry[0].messaging[0].sender.id }}",
+        "contextWindowLength": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        520,
+        720
+      ],
+      "id": "738db1dc-c648-4f43-a211-4fcd9548127e",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "ZilYemy7Nvu3lN4A",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        840,
+        920
+      ],
+      "id": "5a19e1cb-a7a1-4ab7-a061-f342af1f723c",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "Ezn8q0QR4KW7OJL4",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -900,
+        1280
+      ],
+      "id": "7f772cfe-4eb7-47d3-a03f-f97c5b1f016a",
+      "name": "Embeddings OpenAI1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -780,
+        1280
+      ],
+      "id": "06bb3235-cfee-4aa0-907e-69ec1348dd1b",
+      "name": "Default Data Loader",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "appointmentKeywords",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a897b6bd-a871-450c-875d-e39802bdcbb1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "appointment "
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "437d1865-7d03-4703-b3ec-80568ced4216",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "fallback",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -480,
+        300
+      ],
+      "id": "be270555-fb1b-40a6-af6e-c0dd10ca4d8f",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "assistant",
+        "assistantId": {
+          "__rl": true,
+          "value": "asst_c2PrFKUfwxF4Ska7PDrIUJNu",
+          "mode": "list",
+          "cachedResultName": "Summarise chat"
+        },
+        "prompt": "define",
+        "text": "=Summarize the below chat history to prepare for meeting:\n {{ $json.Conversation_memory.toJsonString() }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1120,
+        100
+      ],
+      "id": "327ad4e3-7028-4a6e-bbc7-6d682d5a435a",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Ezn8q0QR4KW7OJL4",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "sayiantechai@gmail.com",
+        "subject": "Summary about customer",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1480,
+        100
+      ],
+      "id": "3b4d2f6b-bbd4-4bff-ad37-e41014420f5d",
+      "name": "Send a message",
+      "webhookId": "8b753e57-2020-4d0a-8829-cc65daad3198",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "vUMAIP4nrewPhBni",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "n8n_chat_histories",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "session_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.entry[0].messaging[0].sender.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        180,
+        100
+      ],
+      "id": "ac01a8bd-af6f-4e42-957f-b426017b36c7",
+      "name": "Get User History1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "00g5neorHwwOw7pG",
+          "name": "SayianTech_hackgen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "Conversation_memory",
+        "include": "specifiedFields",
+        "fieldsToInclude": "message,created_at",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        650,
+        100
+      ],
+      "id": "57d0306e-1043-427c-acf6-5d8d3ad91a42",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "tableId": "Customer_history",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "sender",
+              "fieldValue": "={{ $json.body.entry[0].messaging[0].sender.id }}"
+            },
+            {
+              "fieldId": "message",
+              "fieldValue": "={{ $json.body.entry[0].messaging[0].message.text }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        500
+      ],
+      "id": "e3d0a0b4-20cf-4efb-ad49-c9b285d04e2a",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "00g5neorHwwOw7pG",
+          "name": "SayianTech_hackgen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "path": "f2e0b7f6-28cc-4c04-a2db-86a55bf0751b",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1140,
+        200
+      ],
+      "id": "8f443cd6-9ddb-4ca7-bb4b-7d092da0859d",
+      "name": "Webhook",
+      "webhookId": "f2e0b7f6-28cc-4c04-a2db-86a55bf0751b"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query[\"hub.challenge\"] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -700,
+        100
+      ],
+      "id": "8a44445c-033d-413f-b99d-54afe19a4336",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const message = $json.body.entry[0].messaging[0].message.text.toLowerCase();\n\nconst intents = {\n  appointmentKeywords: [\n   \"appointment\", \"book a slot\", \"schedule\", \"meeting\", \"visit\", \"time available\",\n  \"when can i come\", \"set up a time\", \"reserve\", \"slot\", \"book tour\", \"trial session\"\n  ]\n};\n\nlet detectedIntent = \"fallback\";\nlet matchedKeyword = \"\";\n\nfor (const [intent, keywords] of Object.entries(intents)) {\n  for (const keyword of keywords) {\n    if (message.includes(keyword)) {\n      detectedIntent = intent;\n      matchedKeyword = keyword;\n      break;\n    }\n  }\n  if (detectedIntent !== \"fallback\") break;\n}\n\nreturn [\n  {\n    json: {\n      ...$json,\n      intent: detectedIntent,\n      matched_keyword: matchedKeyword,\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -700,
+        300
+      ],
+      "id": "ed91307f-fb6d-489a-b923-dde842e3c732",
+      "name": "Detect Intent"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8278e72c-a825-4a74-8510-647f0abd8ebf",
+              "leftValue": "={{ $json.body.entry[0].messaging[0].message.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "01f9508e-c4ca-435d-961a-8076a685096c",
+              "leftValue": "={{$json.body.entry[0].messaging[0].message.is_echo}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -920,
+        300
+      ],
+      "id": "faabe3ac-b6f3-4bb8-adb8-42d41dc95caf",
+      "name": "filter empty messages"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.instagram.com/v23.0/{{ $('filter empty messages').item.json.body.entry[0].messaging[0].recipient.id }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer IGAAKVX4s4NEFBZAE0zVDkwdjY0eGZA4bVV3QlNtTG9LbEprZATRLQjN6SFoyZAU1ieHZAkV2wtbDJHRnFVemhiOGdlTG9mb09YdnE1SC0zbnNNaU84M05YVlZA5dUZAzdGxUd0ZA5TE1DZA3EwejZA4a1hERVJDZAjk2OS14Yy1NeDBsZADNEawZDZD"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n\"recipient\": {\n\"id\": \"{{ $('filter empty messages').item.json.body.entry[0].messaging[0].sender.id }}\"\n},\n\"messaging_type\": \"RESPONSE\",\n\"message\": {\n\"text\": \"{{ $json.output }}\"\n}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1190,
+        500
+      ],
+      "id": "fc136b35-7763-479d-83bc-902148573aa4",
+      "name": "Sent MSG"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3dfb5515-40cf-4d4f-a9dc-6d7f44e3e41b",
+              "leftValue": "={{ $json.query[\"hub.mode\"] }}",
+              "rightValue": "subscribe",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "9a8bd172-89a5-4294-98f1-393decab825f",
+              "leftValue": "={{ $json.query[\"hub.verify_token\"] }}",
+              "rightValue": "test1234",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -920,
+        100
+      ],
+      "id": "dd2a05b5-0265-44c7-99d6-beef0235332b",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.instagram.com/v23.0/{{ $('filter empty messages').item.json.body.entry[0].messaging[0].recipient.id }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer IGAAKVX4s4NEFBZAE0zVDkwdjY0eGZA4bVV3QlNtTG9LbEprZATRLQjN6SFoyZAU1ieHZAkV2wtbDJHRnFVemhiOGdlTG9mb09YdnE1SC0zbnNNaU84M05YVlZA5dUZAzdGxUd0ZA5TE1DZA3EwejZA4a1hERVJDZAjk2OS14Yy1NeDBsZADNEawZDZD"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n\"recipient\": {\n\"id\": \"{{ $('filter empty messages').item.json.body.entry[0].messaging[0].sender.id }}\"\n},\n\"messaging_type\": \"RESPONSE\",\n\"message\": {\n\"text\": \"{{ $json.body.entry[0].messaging[0].message.text }}\"\n}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -40,
+        100
+      ],
+      "id": "112edf9b-2cac-4e60-9888-f4a65edd1370",
+      "name": "Sent MSG1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4d96195e-c6a8-494a-95c5-0b994b8a220e",
+              "name": "body.entry[0].messaging[0].message.text",
+              "value": "We invite you to book a Free Consultation with Gym Architech to discuss your growth strategy. Let's design the blueprint for your success!   Click here to find a time that works for you: https://calendar.app.google/hAtXUJPsFoHWWhcv9",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -260,
+        100
+      ],
+      "id": "4d2d991b-2bdb-40e2-9291-3d75e1e6df53",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {
+    "Webhook": []
+  },
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Sent MSG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Memory": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User History": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User History1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Get User History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "filter empty messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Intent": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filter empty messages": {
+      "main": [
+        [
+          {
+            "node": "Detect Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sent MSG": {
+      "main": [
+        []
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sent MSG1": {
+      "main": [
+        [
+          {
+            "node": "Get User History1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Sent MSG1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6fdac33d-3b13-48d0-8c7f-4c23b9b3e89a",
+  "meta": {
+    "instanceId": "d534cb9fee10d333b7caf107a63d06418030a45f1f86d43c493d04d9273ae4fe"
+  },
+  "id": "MWJjkQu67pOmd5au",
+  "tags": [
+    {
+      "createdAt": "2025-07-13T16:26:00.248Z",
+      "updatedAt": "2025-07-13T16:26:00.248Z",
+      "id": "1Ztkmm7WrlkjPSRa",
+      "name": "Instagram"
+    },
+    {
+      "createdAt": "2025-06-05T08:07:38.941Z",
+      "updatedAt": "2025-06-05T08:07:38.941Z",
+      "id": "BimRm5MQMN7GLTn6",
+      "name": "Sales"
+    },
+    {
+      "createdAt": "2025-07-13T16:26:13.183Z",
+      "updatedAt": "2025-07-13T16:26:13.183Z",
+      "id": "EaVnXUYVU2fHz2FK",
+      "name": "not production ready"
+    },
+    {
+      "createdAt": "2025-07-19T12:01:54.294Z",
+      "updatedAt": "2025-07-19T12:01:54.294Z",
+      "id": "tDd32EWzrujtD8t4",
+      "name": "hackgenai"
+    },
+    {
+      "createdAt": "2025-06-05T10:31:00.096Z",
+      "updatedAt": "2025-06-05T10:31:00.096Z",
+      "id": "yde7AQSSZj2KbvtK",
+      "name": "ai agent"
+    }
+  ]
+}
